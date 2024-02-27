@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="kr">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>데이터 개방서비스 점검</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
+
+</head>
+<body onload="loadHomeContent()">
+    <div class="top-container">
+        <h1>데이터 개방서비스 점검 [API 및 활용건수]</h1>
+        <!-- 상단 내용 -->
+    </div>
+
+    <div class="sidebar" style="position: fixed;">
+        <h2>경기도자율주행센터</h2>
+        <div class="tab">
+            <!-- 홈 버튼 -->
+            <!-- <button class="tablinks" onclick="scrollToSection('Intro')">소개</button> -->
+            <button class="tablinks" onclick="openTab(event, 'Home')" id="defaultOpen">Home</button>
+            <button class="tablinks" onclick="openTab(event, 'Intro')">소개</button>
+            <button class="tablinks" onclick="openTab(event, 'DataCheck')">데이터 점검</button>
+            <button class="tablinks" onclick="openTab(event, 'DataDetail')">데이터 상세</button>
+        </div>    
+    </div>
+
+    <div class="main-container">
+        <div id="Home" class="tabcontent" style="display:none;">
+
+            <h1>경기도자율주행센터</h1>
+            <p>크롤링 점검 결과[금일]</p>
+            <div id="loadHomeContent"></div>
+            <p>API 점검 결과[금일]</p>
+            <!-- <div id="displayTodaysCheckStatus"></div> -->
+            <div id="apiCheckResults"></div>
+
+        </div>
+
+        <div id="Intro" class="tabcontent">
+
+            <h1>경기도자율주행센터</h1>
+            <p>경기도자율주행센터는 최첨단 자율주행 기술 개발과 시험을 위한 허브입니다. 고도화된 인프라와 다양한 서비스를 통해 자율주행의 미래를 선도합니다.</p>
+            
+            <h2>우리의 비전</h2>
+            <p>안전하고 효율적인 교통 시스템을 통해 삶의 질을 향상시키는 것이 우리의 비전입니다. 지속 가능한 모빌리티 솔루션을 제공함으로써 사람들의 일상생활에 편리함을 더하고, 환경 보호에 기여합니다.</p>
+    
+            <h2>연구 및 개발</h2>
+            <p>우리 센터는 자율주행 기술의 연구 및 개발에 중점을 두고 있습니다. 실제 도로 상황을 시뮬레이션할 수 있는 시험 환경을 제공하여, 자율주행 기술의 안정성과 효율성을 검증합니다.</p>
+    
+            <h2>협력과 파트너십</h2>
+            <p>우리는 다양한 산업 분야의 기업 및 연구 기관과 협력하여, 자율주행 기술의 혁신을 가속화합니다. 긴밀한 파트너십을 통해 기술의 상용화를 앞당기고, 자율주행의 미래를 현실로 만들어갑니다.</p>
+
+        </div>
+               
+        <div id="DataCheck" class="tabcontent" style="display:none;">
+            <h3>데이터 점검</h3>
+            <p>이곳에서는 데이터 점검을 할 수 있습니다. 아래 버튼을 눌러 점검을 시작하세요.</p>
+            <button id="apiCheckButton" onclick="fetchDataAndVisualize('/api-results', 'api-results-intro')">API 점검 시작</button>
+            <div id="api-results-intro" class="scroll-container">
+                API 결과가 여기에 표시됩니다.
+            </div>
+            <button id="crawlingCheckButton" onclick="fetchDataAndVisualize('/crawling-results', 'crawling-results-intro')">크롤링 데이터 점검 시작</button>
+            <div class="scroll-container">
+                <div id="crawling-results-intro">크롤링 데이터 결과가 여기에 표시됩니다.</div>
+            </div>
+        </div>   
+
+        <div id="DataDetail" class="tabcontent" style="display:none;">
+            <h3>데이터 상세 정보</h3>
+            <p>여기에 데이터 상세 정보가 표시됩니다.</p>
+            <button id="apiDetailsButton" onclick="fetchDetailedData('/api-results-detail', 'api-results-detail')">API 점검 결과 상세</button>
+            <div id="api-results-detail" class="scroll-container">
+                API 점검 결과 세부사항이 표시됩니다.
+            </div>
+            <button id="crawlingdetailsButton" onclick="fetchDetailedData('/crawling-results-detail', 'crawling-results-detail')">크롤링 데이터 점검 결과 상세</button>
+            <div class="scroll-container">
+                <div id="crawling-results-detail">크롤링 데이터 점검 결과 세부사항이 표시됩니다.</div>
+            </div>  
+        </div>         
+    </div>
+
+    <script>
+        
+        function fetchDataAndVisualize(apiEndpoint, resultContainerId) {
+            fetch(apiEndpoint)
+                .then(response => response.json())
+                .then(data => {
+                    let processedData;
+                    let dataType;
+
+                    // 데이터 타입에 따라 처리
+                    if (apiEndpoint.includes('api-results')) {
+                        processedData = processApiResults(data);
+                        dataType = 'api';
+                    } else if (apiEndpoint.includes('crawling-results')) {
+                        processedData = processCrawlingResults(data);
+                        dataType = 'crawling';
+                    }
+
+                    // HTML 테이블 생성
+                    const htmlContent = createHtmlTable(processedData, dataType);
+                    document.getElementById(resultContainerId).innerHTML = htmlContent;
+                })
+                .catch(error => {
+                    console.error('Error fetching data:', error);
+                    document.getElementById(resultContainerId).textContent = '데이터를 불러오는 데 실패했습니다.';
+                });
+        }
+        
+        function fetchDetailedData(apiEndpoint, resultContainerId) {
+            fetch(apiEndpoint)
+                .then(response => response.json())
+                .then(data => {
+                    const resultsContainer = document.getElementById(resultContainerId);
+                    let htmlContent = '<table border="1"><tr>';
+
+                    let headers;
+                    // 'api-results-detail'과 'crawling-results-detail'에 따라 다른 열 헤더 정의
+                    if (apiEndpoint.includes('api-results-detail')) {
+                        headers = ['연번', 'service_name', 'check_time', 'status'];
+                    } else if (apiEndpoint.includes('crawling-results-detail')) {
+                        headers = ['연번', '구분', '데이터명', '사이트 주소', '날짜', '다운로드 횟수'];
+                    }
+
+                    headers.forEach(header => {
+                        htmlContent += `<th>${header}</th>`;
+                    });
+                    htmlContent += '</tr>';
+
+                    // 테이블 데이터 채우기
+                    data.forEach((row, index) => {
+                        htmlContent += '<tr>';
+                        htmlContent += `<td>${index + 1}</td>`; // 연번 추가
+
+                        headers.slice(1).forEach(header => {
+                            const cellValue = row[header] ? row[header] : '정보 없음';
+                            htmlContent += `<td>${cellValue}</td>`;
+                        });
+
+                        htmlContent += '</tr>';
+                    });
+
+                    htmlContent += '</table>';
+                    resultsContainer.innerHTML = htmlContent;
+                })
+                .catch(error => {
+                    console.error('Error fetching data:', error);
+                    document.getElementById(resultContainerId).textContent = '데이터를 불러오는 데 실패했습니다.';
+                });
+        }
+
+        // 기존 JavaScript 유지 및 수정
+        function scrollToSection(sectionId) {
+            document.getElementById(sectionId).scrollIntoView();
+        }
+
+        // 탭 기능
+        function openTab(evt, tabName) {
+            var tabcontent = document.getElementsByClassName("tabcontent");
+            var tablinks = document.getElementsByClassName("tablinks");
+
+            for (var i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+
+            for (var i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+
+            var selectedTabContent = document.getElementById(tabName);
+            if (selectedTabContent) {
+                selectedTabContent.style.display = "block";
+            }
+
+            evt.currentTarget.className += " active";
+        }
+
+        // 페이지 로드 시 첫 번째 탭을 기본적으로 열어둡니다.
+        if (document.getElementById("defaultOpen")) {
+            document.getElementById("defaultOpen").click();
+        }
+
+    </script>
+    
+</body>
+</html>
